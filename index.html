@@ -31,8 +31,11 @@ nav button{background:transparent;border:0;color:#cfe0e6;padding:9px 15px;font-s
   cursor:pointer;border-radius:6px 6px 0 0;font-family:inherit;font-weight:600;white-space:nowrap}
 nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
 nav button.on{background:var(--bg);color:var(--brand)}
-nav button.home{color:#fff;background:rgba(255,255,255,.14);border-radius:6px;margin-right:10px;font-size:13px;padding:7px 13px}
-nav button.home:hover{background:rgba(255,255,255,.24)}
+button.home{background:#fff;color:var(--brand);border:0;padding:9px 19px;border-radius:8px;
+  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:none;
+  box-shadow:0 2px 6px rgba(0,0,0,.2)}
+button.home:hover{background:var(--accent);color:#fff}
+.htop{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
 #navtabs{display:flex;gap:4px;flex-wrap:wrap}
 main{max-width:1180px;margin:0 auto;padding:18px}
 .view{display:none} .view.on{display:block}
@@ -126,13 +129,15 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
 <body>
 
 <header id="hdr" class="plain"><div class="hwrap">
-  <h1>大專校院退場風險評估原型</h1>
-  <div class="sub" id="hsub">以《私立高級中等以上學校退場條例》法定要件為判準的試算工具　│　中國科技大學 規劃與設計學院</div>
+  <div class="htop">
+    <div>
+      <h1>大專校院退場風險評估原型</h1>
+      <div class="sub" id="hsub">以《私立高級中等以上學校退場條例》法定要件為判準的試算工具　│　中國科技大學 規劃與設計學院</div>
+    </div>
+    <button class="home" id="homebtn" style="display:none" onclick="go('cover')">← 回封面</button>
+  </div>
   <div class="warn" id="hwarn" style="display:none"><b>原型測試用途。</b>本工具不產出倒閉機率，亦不對任何具名學校作成評等。所有結果均由使用者自行輸入之公開資料計算，僅供內部研判參考，不得對外引用為對特定學校之評價。</div>
-  <nav id="nav" style="display:none">
-    <button class="home" onclick="go('cover')">← 回封面</button>
-    <span id="navtabs"></span>
-  </nav>
+  <nav id="nav" style="display:none"><span id="navtabs"></span></nav>
 </div></header>
 
 <main>
@@ -267,9 +272,11 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
     </div>
   </div>
 
-  <div id="qout">
-    <div class="card"><h2>檢視結果</h2>
-      <p class="hint">請於左側作答後按「執行檢視」。可先按示範 A 或示範 B 查看兩種樣態的輸出。示範數值為虛構，不對應任何實際學校。</p>
+  <div>
+    <div id="qout">
+      <div class="card"><h2>檢視結果</h2>
+        <p class="hint">請於左側作答後按「執行檢視」。可先按示範 A 或示範 B 查看兩種樣態的輸出。示範數值為虛構，不對應任何實際學校。</p>
+      </div>
     </div>
     <div class="card">
       <h2>這六題是怎麼來的</h2>
@@ -367,9 +374,48 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
     </div>
   </div>
 
-  <div id="out">
-    <div class="card"><h2>評估結果</h2>
-      <p class="hint">請於左側輸入資料後按「執行評估」。可先按「載入示範 A／B」查看兩種典型樣態的輸出。示範數值為虛構，不對應任何實際學校。</p>
+  <div>
+    <div id="out">
+      <div class="card"><h2>評估結果</h2>
+        <p class="hint">請於左側輸入資料後按「執行評估」。可先按「載入示範 A／B」查看兩種典型樣態的輸出。示範數值為虛構，不對應任何實際學校。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>分級速查</h2>
+      <p class="hint">系統依序檢查專案輔導要件、預警要件、財務燈號、動能指標，取最先成立者為分級結果。</p>
+      <table>
+        <tr><th style="width:56px">級別</th><th style="width:134px">名稱</th><th>成立條件</th></tr>
+        <tr><td style="text-align:center"><b>R0</b></td><td>法定要件已成立</td><td>符合退場條例第 6 條第 1 項任一款</td></tr>
+        <tr><td style="text-align:center"><b>R1</b></td><td>法定預警區</td><td>符合退場條例第 5 條第 1 項任一款</td></tr>
+        <tr><td style="text-align:center"><b>R2</b></td><td>財務燈號警示</td><td>七項燈號紅燈達 3 項，或償債能力三項中紅燈達 2 項</td></tr>
+        <tr><td style="text-align:center"><b>R3</b></td><td>招生或師資動能衰退</td><td>觸發註冊率、學生數或專任教師數之動能警示條件</td></tr>
+        <tr><td style="text-align:center"><b>R4</b></td><td>目前無明顯警訊</td><td>就已填欄位未觸及上述任一情形</td></tr>
+      </table>
+      <p class="sm">出現重大旗標時分級向上調升一級。已判定為 R0 者不再調升。</p>
+    </div>
+
+    <div class="card">
+      <h2>法定門檻速查</h2>
+      <p class="hint">依預警學校與專案輔導學校認定輔導及監督辦法第 2 條、第 5 條。</p>
+      <table>
+        <tr><th>財務指標</th><th style="width:86px">預警</th><th style="width:86px">專輔</th></tr>
+        <tr><td>可用資金不足月數（近二年累計）</td><td class="n">6 個月</td><td class="n">12 個月</td></tr>
+        <tr><td>融資管制額為負次數（近三學年度）</td><td class="n">2 次</td><td class="n">3 次</td></tr>
+        <tr><td>扣減不動產支出前現金餘絀短絀次數</td><td class="n">2 次</td><td class="n">3 次</td></tr>
+        <tr><td>短期借款次數（近一學年度）</td><td class="n">3 次</td><td class="n">未列</td></tr>
+      </table>
+      <p class="sm">自有校地面積未達 50% 之學校，第一項改以「無法維持六個月經常性現金支出之月數累計達六個月」認定。</p>
+      <p class="sm">融資管制額 ＝（扣減不動產支出前現金餘絀 × 5）＋ 貨幣性資產 － 貨幣性負債</p>
+    </div>
+
+    <div class="card">
+      <h2>燈號對照</h2>
+      <p class="sm">
+        <span class="lamp L1"></span>綠燈　前 20%　<span class="lamp L2"></span>藍燈　20 至 40%　<span class="lamp L3"></span>黃燈　40 至 60%<br>
+        <span class="lamp L4"></span>橙燈　60 至 80%　<span class="lamp L5"></span>紅燈　80 至 100%（倒數 20%）
+      </p>
+      <p class="sm">燈號為同類校相對位置，紅燈不等於財務違法或即將退場。曾有招生與財務均屬穩健的老牌私校同時取得三至四個紅燈。燈號適合看趨勢與組合，不適合單點解讀。</p>
     </div>
   </div>
 
@@ -567,12 +613,13 @@ function go(v){
   document.querySelectorAll(".view").forEach(function(x){x.classList.remove("on")});
   document.getElementById("v-"+v).classList.add("on");
   var hdr=document.getElementById("hdr"),nav=document.getElementById("nav"),
-      warn=document.getElementById("hwarn"),sub=document.getElementById("hsub");
+      warn=document.getElementById("hwarn"),sub=document.getElementById("hsub"),
+      hb=document.getElementById("homebtn");
   if(v==="cover"){
-    hdr.className="plain"; nav.style.display="none"; warn.style.display="none";
+    hdr.className="plain"; nav.style.display="none"; warn.style.display="none"; hb.style.display="none";
     sub.textContent="以《私立高級中等以上學校退場條例》法定要件為判準的試算工具　│　中國科技大學 規劃與設計學院";
   }else{
-    hdr.className=""; nav.style.display="flex"; warn.style.display="block";
+    hdr.className=""; nav.style.display="flex"; warn.style.display="block"; hb.style.display="block";
     if(v==="full"){
       sub.textContent="版本 1　官方資料評估版　│　逐條比對法定要件，可引註條號";
       document.getElementById("navtabs").style.display="flex";
@@ -599,9 +646,8 @@ function f1(n){return n===null?"－":n.toFixed(1);}
 function qpreset(k){
   ["q_cash","q_reg","q_stu","q_fac"].forEach(function(i){setv(i,null)});
   setv("q_loss",null); setv("q_loan",null); setc("q_regdn",false);
-  if(k==="c"){var qc=document.getElementById("qout");
-    qc.innerHTML='<div class="card"><h2>檢視結果</h2><p class="hint">已清空。請重新作答後按「執行檢視」。</p></div>'
-      +qc.children[qc.children.length-1].outerHTML;return;}
+  if(k==="c"){document.getElementById("qout").innerHTML=
+    '<div class="card"><h2>檢視結果</h2><p class="hint">已清空。請重新作答後按「執行檢視」。</p></div>';return;}
   if(k==="a"){setv("q_cash",9);setv("q_loss","0");setv("q_loan","0");
     setv("q_reg",91.3);setc("q_regdn",false);setv("q_stu",3.1);setv("q_fac",0.5);}
   if(k==="b"){setv("q_cash",1.5);setv("q_loss","3");setv("q_loan","2");
@@ -687,8 +733,7 @@ function runQuick(){
      '簡化評估版是徵兆篩檢，不是法定認定。退場條例第 6 條之認定須經退場審議會審議，本版的輸入亦為概估值而非決算數。本版的用途只有一個，就是判斷需不需要調資料做正式比對。結果不得對外引用，亦不得作為對任何學校之評價。</div>'+
      '<p class="cite">判定依據：私立高級中等以上學校退場條例第 5 條、第 6 條；預警學校與專案輔導學校認定輔導及監督辦法第 2 條、第 5 條（114 年 9 月 24 日修正）。專任教師流失一項之依據為教育部對專案輔導學校之公開統計。</p></div>';
 
-  var qo=document.getElementById("qout");
-  qo.innerHTML=h+qo.children[qo.children.length-1].outerHTML;
+  document.getElementById("qout").innerHTML=h;
 }
 
 /* ================= 官方版 ================= */

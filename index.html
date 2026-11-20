@@ -50,9 +50,22 @@ main{max-width:1180px;margin:0 auto;padding:18px}
 .hint{font-size:12.5px;color:var(--ink3);margin:0 0 10px;line-height:1.6}
 label{display:block;font-size:13px;margin:9px 0 3px;color:var(--ink2)}
 label .q{color:var(--ink3);font-size:11.5px}
-input[type=number],select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;
+input[type=number],input[type=text],select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;
   font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
-input[type=number]:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+input[type=number]:focus,input[type=text]:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+input.miss,select.miss{border-color:var(--red);background:#fff8f8}
+.req{display:inline-block;background:var(--red-soft);color:var(--red);border-radius:4px;padding:0 5px;
+  font-size:10.5px;font-weight:700;margin-left:5px;vertical-align:1px}
+.opt{display:inline-block;background:#eef1f4;color:var(--ink3);border-radius:4px;padding:0 5px;
+  font-size:10.5px;font-weight:700;margin-left:5px;vertical-align:1px}
+.idbar{background:var(--brand);color:#fff;border-radius:9px;padding:12px 17px;margin-bottom:13px;
+  font-size:13.5px;display:flex;flex-wrap:wrap;gap:7px 26px;align-items:center}
+.idbar .k{opacity:.7;font-size:12px;margin-right:6px}
+.idbar b{font-weight:700}
+.idbar .nx{color:#ffcf9a;font-weight:700}
+.prog{height:9px;background:#e9edf0;border-radius:5px;overflow:hidden;margin:8px 0 5px}
+.prog i{display:block;height:100%;border-radius:5px;background:var(--green)}
+.prog i.part{background:var(--accent)} .prog i.bad{background:var(--red)}
 .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
 .chk{display:flex;align-items:flex-start;gap:8px;margin:7px 0;font-size:13px;line-height:1.55;color:var(--ink2)}
 .chk input{margin-top:4px;flex:none;width:15px;height:15px;accent-color:var(--accent)}
@@ -230,12 +243,18 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
       <button class="btn sec" onclick="qpreset('b')">示範 B</button>
       <button class="btn sec" onclick="qpreset('c')">清空</button>
 
-      <h3>一、現金撐得了幾個月</h3>
+      <h3>受評對象</h3>
+      <label>受評學校名稱<span class="req">必填</span></label>
+      <input type="text" id="q_school" placeholder="例如：本校">
+      <label>資料時點<span class="req">必填</span><span class="q">所依據資料之學年度</span></label>
+      <input type="text" id="q_year" placeholder="例如：113">
+
+      <h3>一、現金撐得了幾個月<span class="req">必填</span></h3>
       <label>目前可動用資金，約可支應幾個月的人事費與經常性支出？
         <span class="q">法定基準為三個月</span></label>
       <input type="number" id="q_cash" min="0" max="36" step="0.5" placeholder="月數">
 
-      <h3>二、近三年是否虧損</h3>
+      <h3>二、近三年是否虧損<span class="req">必填</span></h3>
       <label>近三學年度中，年度收支出現短絀的年數
         <span class="q">0 至 3 年</span></label>
       <select id="q_loss">
@@ -244,7 +263,7 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
         <option value="2">2 年</option><option value="3">3 年</option>
       </select>
 
-      <h3>三、是否借錢發薪</h3>
+      <h3>三、是否借錢發薪<span class="req">必填</span></h3>
       <label>近一學年度，是否曾為支付薪資或短期周轉而借款？</label>
       <select id="q_loan">
         <option value="">未填</option>
@@ -253,17 +272,17 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
         <option value="2">發生 3 次以上</option>
       </select>
 
-      <h3>四、新生註冊率</h3>
+      <h3>四、新生註冊率<span class="req">必填</span></h3>
       <label>最近一學年度新生註冊率（%）</label>
       <input type="number" id="q_reg" min="0" max="100" step="0.1" placeholder="%">
       <div class="chk"><input type="checkbox" id="q_regdn"><label for="q_regdn" style="margin:0">近三年註冊率逐年下降</label></div>
 
-      <h3>五、學生數變化</h3>
+      <h3>五、學生數變化<span class="req">必填</span></h3>
       <label>在學學生數，三年來的變動（%）
         <span class="q">減少請填負數，例如 -18</span></label>
       <input type="number" id="q_stu" step="0.1" placeholder="%">
 
-      <h3>六、專任教師變化</h3>
+      <h3>六、專任教師變化<span class="req">必填</span></h3>
       <label>專任教師數，三年來的變動（%）
         <span class="q">減少請填負數，例如 -25</span></label>
       <input type="number" id="q_fac" step="0.1" placeholder="%">
@@ -311,20 +330,28 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
       <button class="btn sec" onclick="preset('risk')">載入示範 B</button>
       <button class="btn sec" onclick="preset('clear')">清空</button>
 
+      <h3>受評對象</h3>
+      <label>受評學校名稱<span class="req">必填</span></label>
+      <input type="text" id="schoolName" placeholder="例如：OO科技大學">
+      <label>資料時點<span class="req">必填</span>
+        <span class="q">決算書與平台資料所屬學年度</span></label>
+      <input type="text" id="dataYear" placeholder="例如：113">
+
       <h3>一、財務法定指標</h3>
-      <label>近二年內每月可用資金無法維持三個月經常性現金支出之月數（累計）
+      <p class="hint">本區四項為法定判定的必要資料，取自學校決算書。缺任一項，判定結果即為暫定。</p>
+      <label>近二年內每月可用資金無法維持三個月經常性現金支出之月數（累計）<span class="req">必填</span>
         <span class="q">預警門檻 6｜專輔門檻 12</span></label>
       <input type="number" id="m_cash" min="0" max="24" placeholder="月數">
 
-      <label>近三學年度決算融資管制額為負數之次數
+      <label>近三學年度決算融資管制額為負數之次數<span class="req">必填</span>
         <span class="q">預警門檻 2｜專輔門檻 3</span></label>
       <input type="number" id="m_fin" min="0" max="3" placeholder="次數">
 
-      <label>近三學年度決算扣減不動產支出前現金餘絀短絀之次數
+      <label>近三學年度決算扣減不動產支出前現金餘絀短絀之次數<span class="req">必填</span>
         <span class="q">預警門檻 2｜專輔門檻 3</span></label>
       <input type="number" id="m_def" min="0" max="3" placeholder="次數">
 
-      <label>近一學年度為支付薪資及短期資金需求之短期借款次數
+      <label>近一學年度為支付薪資及短期資金需求之短期借款次數<span class="req">必填</span>
         <span class="q">期限未逾三個月者；預警門檻 3</span></label>
       <input type="number" id="m_loan" min="0" max="12" placeholder="次數">
 
@@ -337,12 +364,16 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
       <div class="chk"><input type="checkbox" id="c_pay"><label for="c_pay" style="margin:0">積欠教師薪資，經依教師待遇條例處以罰鍰</label></div>
       <div class="chk"><input type="checkbox" id="c_twice"><label for="c_twice" style="margin:0">三年內被列為預警學校達二次以上</label></div>
       <div class="chk"><input type="checkbox" id="c_viol"><label for="c_viol" style="margin:0">違反私立學校法等法令情節嚴重，影響師生權益</label></div>
+      <div class="chk" style="border-top:1px dashed var(--line);padding-top:9px;margin-top:11px">
+        <input type="checkbox" id="c_confirm"><label for="c_confirm" style="margin:0">
+        <b>已逐項查證上列八項要件</b>（未勾選者視為未查證，結果將標示為待確認）<span class="req">必填</span></label></div>
 
-      <h3>三、財務比率燈號</h3>
-      <p class="hint">取自平台「財2-11 私立學校財務比率及燈號」。燈號為同類校相對位置，紅燈為倒數 20%。</p>
+      <h3>三、財務比率燈號<span class="opt">建議</span></h3>
+      <p class="hint">取自平台「財2-11 私立學校財務比率及燈號」。燈號為同類校相對位置，紅燈為倒數 20%。未填不影響法定要件判定，但 R2 級別將無法成立。</p>
       <div id="lamps"></div>
 
-      <h3>四、招生與師資動能</h3>
+      <h3>四、招生與師資動能<span class="opt">建議</span></h3>
+      <p class="hint">未填不影響法定要件判定，但 R3 級別將無法成立。</p>
       <label>新生註冊率（%）<span class="q">近三學年度，由舊至新</span></label>
       <div class="row">
         <input type="number" id="r1" step="0.1" placeholder="T-2">
@@ -633,6 +664,25 @@ function go(v){
   window.scrollTo(0,0);
 }
 
+function TX(id){var e=document.getElementById(id);if(!e)return null;var v=e.value.trim();return v===""?null:v;}
+function esc(x){return String(x).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+function p2(n){return n<10?"0"+n:""+n;}
+function stamp(){var d=new Date();
+  return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())+" "+p2(d.getHours())+":"+p2(d.getMinutes());}
+function idbar(school,year){
+  return '<div class="idbar">'+
+    '<span><span class="k">受評學校</span><b>'+(school?esc(school):'<span class="nx">未指定</span>')+'</b></span>'+
+    '<span><span class="k">資料時點</span><b>'+(year?esc(year)+' 學年度':'<span class="nx">未指定</span>')+'</b></span>'+
+    '<span><span class="k">產出時間</span><b>'+stamp()+'</b></span></div>';}
+function mark(pairs){pairs.forEach(function(o){
+  var e=document.getElementById(o[0]); if(e){ if(o[1])e.classList.add("miss"); else e.classList.remove("miss"); }});}
+function bar(done,total){
+  var r=total?Math.round(done/total*100):0;
+  var cls=(r===100?"":(r>=50?"part":"bad"));
+  return '<div class="prog"><i class="'+cls+'" style="width:'+r+'%"></i></div>'+
+         '<p class="sm">已填 <b>'+done+'</b> 項，共 '+total+' 項（'+r+'%）</p>';}
+function st(ok){return ok?'<span class="tag t-ok">已填</span>':'<span class="tag t-hit">欠缺</span>';}
 function V(id){var e=document.getElementById(id);var v=e.value.trim();return v===""?null:parseFloat(v);}
 function S(id){var v=document.getElementById(id).value;return v===""?null:parseInt(v,10);}
 function C(id){return document.getElementById(id).checked;}
@@ -644,13 +694,17 @@ function f1(n){return n===null?"－":n.toFixed(1);}
 
 /* ================= 簡化版 ================= */
 function qpreset(k){
-  ["q_cash","q_reg","q_stu","q_fac"].forEach(function(i){setv(i,null)});
-  setv("q_loss",null); setv("q_loan",null); setc("q_regdn",false);
+  ["q_school","q_year","q_cash","q_reg","q_stu","q_fac"].forEach(function(i){
+    setv(i,null);var e=document.getElementById(i);if(e)e.classList.remove("miss");});
+  ["q_loss","q_loan"].forEach(function(i){setv(i,null);
+    var e=document.getElementById(i);if(e)e.classList.remove("miss");});
+  setc("q_regdn",false);
   if(k==="c"){document.getElementById("qout").innerHTML=
     '<div class="card"><h2>檢視結果</h2><p class="hint">已清空。請重新作答後按「執行檢視」。</p></div>';return;}
-  if(k==="a"){setv("q_cash",9);setv("q_loss","0");setv("q_loan","0");
+  if(k==="clearonly"){return;}
+  if(k==="a"){setv("q_school","示範甲校（虛構）");setv("q_year","115");setv("q_cash",9);setv("q_loss","0");setv("q_loan","0");
     setv("q_reg",91.3);setc("q_regdn",false);setv("q_stu",3.1);setv("q_fac",0.5);}
-  if(k==="b"){setv("q_cash",1.5);setv("q_loss","3");setv("q_loan","2");
+  if(k==="b"){setv("q_school","示範乙校（虛構）");setv("q_year","115");setv("q_cash",1.5);setv("q_loss","3");setv("q_loan","2");
     setv("q_reg",28.7);setc("q_regdn",true);setv("q_stu",-46.7);setv("q_fac",-43.3);}
   runQuick();
 }
@@ -658,6 +712,22 @@ function qpreset(k){
 function runQuick(){
   var cash=V("q_cash"),loss=S("q_loss"),loan=S("q_loan"),
       reg=V("q_reg"),regdn=C("q_regdn"),stu=V("q_stu"),fac=V("q_fac");
+  var school=TX("q_school"), year=TX("q_year");
+  var LOSSTXT={0:"0 年",1:"1 年",2:"2 年",3:"3 年"};
+  var LOANTXT={0:"未曾發生",1:"發生 1 至 2 次",2:"發生 3 次以上"};
+  var QREQ=[
+   ["q_school","受評學校名稱",school!==null,school?esc(school):"－","使用者填寫"],
+   ["q_year","資料時點",year!==null,year?esc(year)+" 學年度":"－","使用者填寫"],
+   ["q_cash","現金可支應月數",cash!==null,cash!==null?cash+" 個月":"－","會計室或主計單位"],
+   ["q_loss","近三學年度短絀年數",loss!==null,loss!==null?LOSSTXT[loss]:"－","決算書或平台財2-10"],
+   ["q_loan","近一學年度借款發薪",loan!==null,loan!==null?LOANTXT[loan]:"－","總務或會計單位"],
+   ["q_reg","最近一學年新生註冊率",reg!==null,reg!==null?reg+"%"+(regdn?"（近三年逐年下降）":""):"－","平台學12-1或教務處"],
+   ["q_stu","在學學生數三年變動",stu!==null,stu!==null?(stu>0?"+":"")+stu+"%":"－","平台學生類或教務處"],
+   ["q_fac","專任教師數三年變動",fac!==null,fac!==null?(fac>0?"+":"")+fac+"%":"－","人事室或平台教師類"]
+  ];
+  mark(QREQ.map(function(x){return [x[0],!x[2]];}));
+  var qMiss=QREQ.filter(function(x){return !x[2];});
+  var qDone=QREQ.length-qMiss.length;
 
   var redHits=[],amberHits=[],okHits=[],naCnt=0;
 
@@ -712,7 +782,21 @@ function runQuick(){
     ds="就已作答之 "+okHits.length+" 項，均未觸及紅區或黃區。本結論僅限於已作答項目。";
     act="建議每年以官方資料評估版做一次完整比對並留存紀錄，作為後續年度的比較基線。";}
 
+  if(qMiss.length>0&&lv!=="Q0"){
+    nm=nm+"（暫定）";
+    ds="八項必要資料中尚有 "+qMiss.length+" 項未填。未填者不列入判定，故實際風險只會高於本結果，不會更低。　"+ds;
+  }
+
   var h="";
+  h+=idbar(school,year);
+
+  if(qMiss.length>0){
+    h+='<div class="card" style="border-color:#f0b4b4"><h2 style="color:var(--red)">尚缺必要資料 '+qMiss.length+' 項</h2>'+
+       '<p class="hint">本版八項全部為必填。下列欄位未填，左側對應欄位已標紅。</p><ul>';
+    qMiss.forEach(function(x){h+='<li><b>'+x[1]+'</b>　來源：'+x[4]+'</li>';});
+    h+='</ul><div class="box red"><b>對結果的影響</b>未填欄位不列入判定，填得愈少結果愈偏向綠區。補齊之前，請勿以本結果判斷不需進一步查核。</div></div>';
+  }
+
   h+='<div class="verdict v-'+lv+'"><p class="lv">'+
      (lv==="Q0"?"紅":(lv==="Q1"?"黃":"綠"))+'</p><p class="nm">'+nm+'</p><p class="ds">'+ds+'</p></div>';
 
@@ -729,6 +813,12 @@ function runQuick(){
   h+='<div class="card"><h2>下一步建議</h2><div class="box'+(lv==="Q0"?" red":(lv==="Q1"?" amber":" green"))+'"><b>'+nm+'</b>'+act+'</div>';
   h+='<button class="btn" onclick="go(\'full\')">切換到官方資料評估版</button></div>';
 
+  h+='<div class="card"><h2>本次檢視使用之資料</h2>';
+  h+='<p class="hint">下表為本次判定實際採用的全部輸入值與其來源。列為欠缺者未納入計算。</p>'+bar(qDone,QREQ.length);
+  h+='<table><tr><th style="width:196px">資料項目</th><th>輸入值</th><th style="width:158px">來源</th><th style="width:72px">狀態</th></tr>';
+  QREQ.forEach(function(x){h+='<tr><td>'+x[1]+'</td><td>'+x[3]+'</td><td class="sm">'+x[4]+'</td><td>'+st(x[2])+'</td></tr>';});
+  h+='</table></div>';
+
   h+='<div class="card"><div class="box"><b>本版的性質</b>'+
      '簡化評估版是徵兆篩檢，不是法定認定。退場條例第 6 條之認定須經退場審議會審議，本版的輸入亦為概估值而非決算數。本版的用途只有一個，就是判斷需不需要調資料做正式比對。結果不得對外引用，亦不得作為對任何學校之評價。</div>'+
      '<p class="cite">判定依據：私立高級中等以上學校退場條例第 5 條、第 6 條；預警學校與專案輔導學校認定輔導及監督辦法第 2 條、第 5 條（114 年 9 月 24 日修正）。專任教師流失一項之依據為教育部對專案輔導學校之公開統計。</p></div>';
@@ -738,13 +828,15 @@ function runQuick(){
 
 /* ================= 官方版 ================= */
 function preset(k){
-  var ids=["m_cash","m_fin","m_def","m_loan","r1","r2","r3","s1","s2","s3","t1","t2","t3","g1","g2","g3"];
-  var cs=["c_debt","c_fac1","c_fac2","c_qa1","c_qa2","c_pay","c_twice","c_viol"];
-  ids.forEach(function(i){setv(i,null)}); cs.forEach(function(i){setc(i,false)});
+  var ids=["schoolName","dataYear","m_cash","m_fin","m_def","m_loan","r1","r2","r3","s1","s2","s3","t1","t2","t3","g1","g2","g3"];
+  var cs=["c_debt","c_fac1","c_fac2","c_qa1","c_qa2","c_pay","c_twice","c_viol","c_confirm"];
+  ids.forEach(function(i){setv(i,null);var e=document.getElementById(i);if(e)e.classList.remove("miss");});
+  cs.forEach(function(i){setc(i,false);var e=document.getElementById(i);if(e)e.classList.remove("miss");});
   LAMPS.forEach(function(L){document.getElementById(L[0]).value=""});
   if(k==="clear"){document.getElementById("out").innerHTML=
     '<div class="card"><h2>評估結果</h2><p class="hint">已清空。請重新輸入資料後按「執行評估」。</p></div>';return;}
   if(k==="stable"){
+    setv("schoolName","示範甲校（虛構）");setv("dataYear","115");setc("c_confirm",true);
     setv("m_cash",0);setv("m_fin",0);setv("m_def",0);setv("m_loan",0);
     setv("r1",88.4);setv("r2",90.1);setv("r3",91.3);
     setv("s1",5050);setv("s2",5160);setv("s3",5209);
@@ -754,6 +846,7 @@ function preset(k){
     setv("g1",129476455);setv("g2",134245415);setv("g3",139302326);
   }
   if(k==="risk"){
+    setv("schoolName","示範乙校（虛構）");setv("dataYear","115");setc("c_confirm",true);
     setv("m_cash",14);setv("m_fin",3);setv("m_def",2);setv("m_loan",4);
     setc("c_debt",true);setc("c_qa1",true);
     setv("r1",52.0);setv("r2",41.5);setv("r3",28.7);
@@ -774,6 +867,23 @@ function run(){
   ["l4","l5","l6"].forEach(function(k){if(L[k]!==""){filledSolv++;if(L[k]==="5")redSolv++;}});
 
   var cash=V("m_cash"),fin=V("m_fin"),def=V("m_def"),loan=V("m_loan");
+  var school=TX("schoolName"), year=TX("dataYear"), confirmed=C("c_confirm");
+  var chkIds=["c_debt","c_fac1","c_fac2","c_qa1","c_qa2","c_pay","c_twice","c_viol"];
+  var chkN=0; chkIds.forEach(function(k){if(C(k))chkN++;});
+
+  var REQ=[
+   ["schoolName","受評學校名稱",school!==null,school?esc(school):"－","使用者填寫"],
+   ["dataYear","資料時點",year!==null,year?esc(year)+" 學年度":"－","使用者填寫"],
+   ["m_cash","可用資金不足月數（近二年累計）",cash!==null,cash!==null?cash+" 個月":"－","學校決算書"],
+   ["m_fin","融資管制額為負次數（近三學年度）",fin!==null,fin!==null?fin+" 次":"－","學校決算書"],
+   ["m_def","扣減不動產支出前現金餘絀短絀次數",def!==null,def!==null?def+" 次":"－","學校決算書"],
+   ["m_loan","短期借款次數（近一學年度）",loan!==null,loan!==null?loan+" 次":"－","學校決算書"],
+   ["c_confirm","非財務要件逐項查證",confirmed,confirmed?"已查證，其中成立 "+chkN+" 項":"未查證","使用者確認"]
+  ];
+  mark(REQ.map(function(x){return [x[0],!x[2]];}));
+  var missReq=REQ.filter(function(x){return !x[2];});
+  var missFin=REQ.slice(2,6).filter(function(x){return !x[2];});
+  var doneReq=REQ.length-missReq.length;
 
   var t6=[];
   if(cash!==null&&cash>=12) t6.push(["§6 I 1（辦法§5 I 1）","可用資金不足月數 "+cash+" 個月，已達 12 個月門檻"]);
@@ -829,7 +939,24 @@ function run(){
       ds="本級別係由下一級別經重大旗標調升。調升依據為歷史專案輔導學校之共同特徵，屬經驗規則，不具統計檢定基礎。"+ds;}
   }
 
+  if(missFin.length>0){
+    nm=nm+"（暫定）";
+    ds="四項法定財務指標中尚有 "+missFin.length+" 項未填。未填欄位不列入判定，故實際風險只會高於本結果，不會更低。請補齊後重新評估。　"+ds;
+  }else if(!confirmed){
+    nm=nm+"（待確認）";
+    ds="八項非財務要件尚未勾選「已逐項查證」。該八項若有任一成立而未勾選，分級將低估。　"+ds;
+  }
+
   var h="";
+  h+=idbar(school,year);
+
+  if(missReq.length>0){
+    h+='<div class="card" style="border-color:#f0b4b4"><h2 style="color:var(--red)">尚缺必要資料 '+missReq.length+' 項</h2>'+
+       '<p class="hint">下列欄位為判定所必需，目前未填。左側對應欄位已標紅。</p><ul>';
+    missReq.forEach(function(x){h+='<li><b>'+x[1]+'</b>　來源：'+x[4]+'</li>';});
+    h+='</ul><div class="box red"><b>對結果的影響</b>本工具對未填欄位一律不列入判定，欄位愈不完整，結果愈偏向低風險。在補齊之前，請勿將下方分級視為定論。</div></div>';
+  }
+
   h+='<div class="verdict v-'+lv+'"><p class="lv">'+lv+'</p><p class="nm">'+nm+'</p><p class="ds">'+ds+'</p></div>';
 
   h+='<div class="card"><h2>法定要件比對</h2>';
@@ -888,6 +1015,34 @@ function run(){
   if(dn.length){h+='<div class="card"><h2>重大旗標</h2><div class="box red"><b>已觸發下列旗標，分級調升一級</b><ul>';
     dn.forEach(function(d){h+='<li>'+d+'</li>';});
     h+='</ul>此調升依據為歷史專案輔導學校之共同特徵（教育部統計顯示該等學校專任教師年減幅達一成至四成），屬經驗規則，尚未經樣本校準。</div></div>';}
+
+  // ---- 本次評估所使用之資料 ----
+  function f3(a,b,c,pc){
+    if(a===null&&b===null&&c===null) return "－";
+    var g=function(v){return v===null?"－":(pc?f1(v):f0(v));};
+    return g(a)+" / "+g(b)+" / "+g(c);}
+  var lampTxt=[]; LAMPS.forEach(function(x){ if(L[x[0]]!=="") lampTxt.push(x[1]+"："+LNAME[L[x[0]]]); });
+  var OPT=[
+   ["財務比率燈號", filled>0?(filled+" / 7 項已填，紅燈 "+red+" 項"):"－", filled>0, "平台 財2-11"],
+   ["新生註冊率（%）", f3(V("r1"),V("r2"),V("r3"),true), V("r3")!==null, "平台 學12-1"],
+   ["在學學生數（人）", f3(V("s1"),V("s2"),V("s3"),false), V("s3")!==null, "平台 學生類表冊"],
+   ["專任教師數（人）", f3(V("t1"),V("t2"),V("t3"),false), V("t3")!==null, "平台 教師類表冊"],
+   ["深耕與獎補助款（元）", f3(g1,g2,g3,false), g3!==null, "教育部年度核定清冊"]
+  ];
+  var doneOpt=OPT.filter(function(x){return x[2];}).length;
+
+  h+='<div class="card"><h2>本次評估使用之資料</h2>';
+  h+='<p class="hint">下表為本次判定實際採用的全部輸入值與其來源。列為欠缺者未納入計算。</p>';
+  h+='<h3>必要資料</h3>'+bar(doneReq,REQ.length);
+  h+='<table><tr><th style="width:230px">資料項目</th><th>輸入值</th><th style="width:132px">來源</th><th style="width:72px">狀態</th></tr>';
+  REQ.forEach(function(x){h+='<tr><td>'+x[1]+'</td><td>'+x[3]+'</td><td class="sm">'+x[4]+'</td><td>'+st(x[2])+'</td></tr>';});
+  h+='</table>';
+  h+='<h3>建議資料</h3>'+bar(doneOpt,OPT.length);
+  h+='<table><tr><th style="width:230px">資料項目</th><th>輸入值</th><th style="width:132px">來源</th><th style="width:72px">狀態</th></tr>';
+  OPT.forEach(function(x){h+='<tr><td>'+x[0]+'</td><td>'+x[1]+'</td><td class="sm">'+x[3]+'</td><td>'+st(x[2])+'</td></tr>';});
+  h+='</table>';
+  if(lampTxt.length) h+='<p class="sm">燈號明細：'+lampTxt.join("　")+'</p>';
+  h+='<p class="sm">三年期數值依序為 T-2、T-1、T。政策支持度不納入風險判定。</p></div>';
 
   h+='<div class="card"><div class="box"><b>結果解讀提醒</b>'+
      '本結果不代表教育部之認定，亦不預測該校是否會退場。第 6 條之認定須經退場審議會審議，第 7 款「情節嚴重」更屬個案判斷。未填欄位一律不列入判定，故欄位填寫愈不完整，結果愈偏向低風險，請留意此一偏誤方向。</div>'+

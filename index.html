@@ -128,6 +128,36 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
 .cover-intro p{margin:6px 0;font-size:14px;line-height:1.8;color:var(--ink2)}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:800px){.choices{grid-template-columns:1fr}}
+
+/* ---------- 結果輸出為 PDF：A4 直式，結果欄滿版 ---------- */
+#printhead{display:none}
+@page{size:A4 portrait;margin:14mm 12mm}
+@media print{
+  html,body{background:#fff!important;margin:0!important;padding:0!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  main{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
+  body[data-print] #hdr,body[data-print] footer,body[data-print] nav{display:none!important}
+  body[data-print] .view{display:none!important}
+  body[data-print="full"] #v-full,body[data-print="quick"] #v-quick{display:block!important}
+  body[data-print] .panel{display:none!important}
+  body[data-print] .panel.on{display:block!important}
+  body[data-print] .grid{display:block!important;grid-template-columns:none!important;gap:0!important}
+  body[data-print="full"] #v-full .grid>div:first-child{display:none!important}
+  body[data-print="quick"] #v-quick .grid>div:first-child{display:none!important}
+  body[data-print="full"] #v-full .grid>div:last-child>*:not(#out){display:none!important}
+  body[data-print="quick"] #v-quick .grid>div:last-child>*:not(#qout){display:none!important}
+  body[data-print] #printhead{display:block!important;margin:0 0 10px;padding:0 0 8px;
+    border-bottom:2px solid var(--brand)}
+  #printhead .ph-t{font-size:17px;font-weight:700;color:var(--brand)}
+  #printhead .ph-s{font-size:11px;color:var(--ink3);margin-top:3px;line-height:1.5}
+  body[data-print] .card{break-inside:avoid;page-break-inside:avoid;box-shadow:none!important;
+    border:1px solid #cfd6dd!important;margin:0 0 10px!important}
+  body[data-print] .card>h2{break-after:avoid;page-break-after:avoid}
+  body[data-print] table{width:100%!important;break-inside:auto}
+  body[data-print] tr{break-inside:avoid;page-break-inside:avoid}
+  body[data-print] thead{display:table-header-group}
+  body[data-print] .btn,body[data-print] button{display:none!important}
+}
 .choice{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0;overflow:hidden;
   display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s}
 .choice:hover{border-color:var(--accent);box-shadow:0 3px 14px rgba(0,0,0,.07)}
@@ -147,6 +177,10 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
 </style>
 </head>
 <body>
+<div id="printhead">
+  <div class="ph-t">大專校院退場風險評估　結果報表</div>
+  <div class="ph-s">中國科技大學 規劃與設計學院　│　本報表之判定由使用者輸入之公開資料即時計算，不構成退場條例所定之法定認定，僅供內部研判參考。</div>
+</div>
 
 <header id="hdr" class="plain"><div class="hwrap">
   <div class="htop">
@@ -298,6 +332,7 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
       <input type="number" id="q_fac" step="0.1" placeholder="%">
 
       <button class="btn" onclick="runQuick()">執行檢視</button>
+      <button class="btn sec" onclick="exportPDF('quick')">結果輸出為 PDF</button>
     </div>
   </div>
 
@@ -415,6 +450,7 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
       </div>
 
       <button class="btn" onclick="run()">執行評估</button>
+      <button class="btn sec" onclick="exportPDF('full')">結果輸出為 PDF</button>
     </div>
   </div>
 
@@ -687,6 +723,16 @@ var DB=null, GR=null, GIDX={}, AUTO={o:null,q:null};
 function nkey(n){var t=String(n).replace(/臺/g,"台").replace(/\s/g,"").trim();
   var i=t.lastIndexOf("學校財團法人");
   return i>=0?t.slice(i+6):t;}
+function exportPDF(which){
+  var box=document.getElementById(which==="quick"?"qout":"out");
+  if(!box||!/受評學校/.test(box.textContent)){
+    alert("請先按「"+(which==="quick"?"執行檢視":"執行評估")+"」產生結果，再輸出 PDF。");return;}
+  document.body.setAttribute("data-print",which);
+  var clear=function(){document.body.removeAttribute("data-print");
+    window.removeEventListener("afterprint",clear);};
+  window.addEventListener("afterprint",clear);
+  setTimeout(function(){window.print();setTimeout(clear,1500);},60);
+}
 function msg(id,cls,html){var e=document.getElementById(id);
   if(e){e.className="loadbox"+(cls?" "+cls:"");e.innerHTML=html;}}
 function setAuto(id,v){var e=document.getElementById(id);if(!e)return false;

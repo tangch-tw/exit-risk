@@ -689,10 +689,15 @@ function nkey(n){return String(n).replace(/學校財團法人.*?(?=大學|學院
 function msg(id,cls,html){var e=document.getElementById(id);
   if(e){e.className="loadbox"+(cls?" "+cls:"");e.innerHTML=html;}}
 function setAuto(id,v){var e=document.getElementById(id);if(!e)return false;
-  if(v===null||v===undefined){e.classList.remove("auto");return false;}
+  if(v===null||v===undefined){                 // 該校該年無資料：清空，不可沿用前一校數值
+    if(e.classList.contains("auto"))e.value="";
+    e.classList.remove("auto");return false;}
   e.value=v;e.classList.add("auto");e.classList.remove("miss");return true;}
 function clearAuto(ids){ids.forEach(function(i){var e=document.getElementById(i);
-  if(e)e.classList.remove("auto");});}
+  if(e){ if(e.classList.contains("auto"))e.value="";   // 只清掉機器填的，保留人工輸入
+         e.classList.remove("auto"); }});}
+var AUTOIDS_O=["dataYear","s1","s2","s3","r1","r2","r3","t1","t2","t3","g1","g2","g3","l1","l3","l7"];
+var AUTOIDS_Q=["q_year","q_reg","q_stu","q_loss","q_fac"];
 
 (async function loadDB(){
   try{
@@ -765,8 +770,9 @@ function last(a){for(var i=a.length-1;i>=0;i--) if(a[i]!==null) return {v:a[i],i
 function fillOfficial(){
   var nm=TX("schoolName"), d=lookup(nm);
   AUTO.o=d;
-  var ids=["dataYear","s1","s2","s3","r1","r2","r3","g1","g2","g3"];
-  if(!d){ clearAuto(ids);
+  clearAuto(AUTOIDS_O);                        // 先清上一校殘留
+  var ids=AUTOIDS_O;
+  if(!d){
     if(nm) msg("autoMsg","", '找不到「'+esc(nm)+'」，請由下拉清單選取，或自行輸入各欄位。');
     return; }
   var n=DB.ys.length, fill=[];
@@ -787,7 +793,6 @@ function fillOfficial(){
   } else { clearAuto(["g1","g2","g3"]); }
 
   var lp=calcLamps(d), lampTxt="";
-  LVMAP.forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove("auto");});
   if(lp){
     var nmz=DB.lvCols||["學雜費收入變動率","本期餘絀比率","負債權益比率"], got=[];
     LVMAP.forEach(function(id,k){
@@ -822,8 +827,10 @@ function fillOfficial(){
 function fillQuick(){
   var nm=TX("q_school"), d=lookup(nm);
   AUTO.q=d;
-  var ids=["q_year","q_reg","q_stu","q_loss"];
-  if(!d){ clearAuto(ids);
+  clearAuto(AUTOIDS_Q);
+  document.getElementById("q_regdn").checked=false;
+  var ids=AUTOIDS_Q;
+  if(!d){
     if(nm) msg("qAutoMsg","", '找不到「'+esc(nm)+'」，請由下拉清單選取，或自行作答。');
     return; }
   var n=DB.ys.length, fill=[];

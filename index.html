@@ -185,7 +185,7 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
           <dt>需要準備的資料</dt>
           <dd><ul>
             <li>學校決算書（可用資金、現金餘絀、短期借款）</li>
-            <li>校務資訊公開平台財2-1、財2-3、財2-10、財2-11</li>
+            <li>校務資訊公開平台財2-1、財2-3、財2-6、財2-7、財2-8、財2-10、財2-11</li>
             <li>新生註冊率、在學學生數、專任教師數三年資料</li>
           </ul></dd>
           <dt>產出</dt>
@@ -382,7 +382,7 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
         <b>已逐項查證上列八項要件</b>（未勾選者視為未查證，結果將標示為待確認）<span class="req">必填</span></label></div>
 
       <h3>三、財務比率燈號<span class="opt">建議</span></h3>
-      <p class="hint">官方「財2-11 財務比率及燈號」僅更新至 109 學年度。本工具就其中<b>三項</b>（學雜費收入變動率、本期餘絀比率、負債權益比率）依官方公式，以平台原始財務表重算 110 至 113 學年度並自動帶入，欄位以綠色標示。<b>其餘四項</b>的分母均需流動負債，平台未揭露私校資產負債表，無法重算，請自行填寫。燈號為同類校相對位置，紅燈為倒數 20%。未填不影響法定要件判定；R2 級別改以<b>已填項目</b>的紅燈比例計算，故僅填三項亦可判定，惟填愈少代表性愈低。</p>
+      <p class="hint">官方「財2-11 財務比率及燈號」僅更新至 109 學年度。本工具就其中<b>五項</b>依官方公式，以平台原始財務表重算 110 學年度以後並自動帶入，欄位以綠色標示：學雜費收入變動率、本期餘絀比率、可用資金比率（＝財2-1 可用資金 ÷ 財2-7 人事費）、負債權益比率，以及<b>現金餘絀變動率</b>。前四項以 107 至 109 學年度官方公告值回頭驗算，燈號一致；現金餘絀變動率因平台未揭露「出售資產現金收入」，係以營運活動現金流量扣除動產、無形資產及其他資產購置數推算，驗算燈號一致率約九成，列為<b>推算值</b>，遇有重大資產處分之學校請自行覆核。<b>現金流量比率與速動比率</b>的分母均為流動負債，平台未公開私校資產負債表，無法重算，請自行填寫。燈號為同類校相對位置，紅燈為倒數 20%。未填不影響法定要件判定；R2 級別以<b>已填項目</b>的紅燈比例計算，填愈少代表性愈低。</p>
       <div id="lamps"></div>
 
       <h3>四、招生與師資動能<span class="opt">建議</span></h3>
@@ -508,7 +508,7 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
       <tr><td>可用資金、現金增減</td><td>財2-1 私立學校可用資金、本學年現金增減情形（以校統計）</td><td>平台下載</td></tr>
       <tr><td>負債占總資產比率</td><td>財2-3 私立學校負債占總資產比率（以校統計）</td><td>平台下載</td></tr>
       <tr><td>收支餘絀</td><td>財2-10 私立學校收支餘絀情形表（以校統計）</td><td>平台下載</td></tr>
-      <tr><td>七項財務比率與燈號</td><td>財2-11 私立學校財務比率及燈號（以校統計）</td><td>平台下載</td></tr>
+      <tr><td>七項財務比率與燈號</td><td>財2-11（至 109 學年度）；110 學年度起五項由財2-1、2-6、2-7、2-8 重算</td><td>平台下載</td></tr>
       <tr><td>財務查核結果</td><td>財2-9 查核私立各校財務狀況結果及追蹤辦理情形</td><td>平台下載</td></tr>
       <tr><td>新生註冊率</td><td>學12-1 新生註冊率（以系所統計）；同資料亦開放於政府資料開放平臺</td><td>平台下載</td></tr>
       <tr><td>學生數、專任教師數</td><td>學生類、教師類各表冊</td><td>平台下載</td></tr>
@@ -684,8 +684,9 @@ function go(v){
 
 /* ================= 平台資料自動帶入 ================= */
 var DB=null, GR=null, GIDX={}, AUTO={o:null,q:null};
-function nkey(n){return String(n).replace(/學校財團法人.*?(?=大學|學院|專科|科技)/,"")
-  .replace(/臺/g,"台").replace(/\s/g,"").trim();}
+function nkey(n){var t=String(n).replace(/臺/g,"台").replace(/\s/g,"").trim();
+  var i=t.lastIndexOf("學校財團法人");
+  return i>=0?t.slice(i+6):t;}
 function msg(id,cls,html){var e=document.getElementById(id);
   if(e){e.className="loadbox"+(cls?" "+cls:"");e.innerHTML=html;}}
 function setAuto(id,v){var e=document.getElementById(id);if(!e)return false;
@@ -696,7 +697,7 @@ function setAuto(id,v){var e=document.getElementById(id);if(!e)return false;
 function clearAuto(ids){ids.forEach(function(i){var e=document.getElementById(i);
   if(e){ if(e.classList.contains("auto"))e.value="";   // 只清掉機器填的，保留人工輸入
          e.classList.remove("auto"); }});}
-var AUTOIDS_O=["dataYear","s1","s2","s3","r1","r2","r3","t1","t2","t3","g1","g2","g3","l1","l3","l7"];
+var AUTOIDS_O=["dataYear","s1","s2","s3","r1","r2","r3","t1","t2","t3","g1","g2","g3","l1","l2","l3","l6","l7"];
 var AUTOIDS_Q=["q_year","q_reg","q_stu","q_loss","q_fac"];
 
 (async function loadDB(){
@@ -739,11 +740,13 @@ function lookup(name){
           lv:hit[8]||null, tch:hit[9]||null, owe:hit[10]||null,
           grant:GIDX[nkey(hit[0])]||null};
 }
-var LVMAP=["l1","l3","l7"];   // 學雜費收入變動率、本期餘絀比率、負債權益比率
+var LVMAP=["l1","l2","l3","l6","l7"];   // 學雜費收入變動率、現金餘絀變動率、本期餘絀比率、可用資金比率、負債權益比率
 function calcLamps(d){
   if(!DB||!DB.lvDir||!d||!d.lv) return null;
-  var out=[null,null,null], vals=[null,null,null], yrs=[null,null,null], ns=[0,0,0], any=false;
-  for(var k=0;k<3;k++){
+  var NK=(DB.lvCols||[]).length||DB.lvDir.length;
+  var out=[], vals=[], yrs=[], ns=[], any=false;
+  for(var z=0;z<NK;z++){out.push(null);vals.push(null);yrs.push(null);ns.push(0);}
+  for(var k=0;k<NK;k++){
     for(var yi=DB.yf.length-1; yi>=0; yi--){           // 各指標各自回溯
       var L=d.lv[yi]; if(!L||L[k]===null||L[k]===undefined) continue;
       var v=L[k], peers=[];
@@ -795,7 +798,7 @@ function fillOfficial(){
 
   var lp=calcLamps(d), lampTxt="";
   if(lp){
-    var nmz=DB.lvCols||["學雜費收入變動率","本期餘絀比率","負債權益比率"], got=[];
+    var nmz=DB.lvCols||["學雜費收入變動率","現金餘絀變動率","本期餘絀比率","可用資金比率","負債權益比率"], got=[];
     LVMAP.forEach(function(id,k){
       if(lp.lamps[k]===null)return;
       var e=document.getElementById(id); if(!e)return;
@@ -805,8 +808,9 @@ function fillOfficial(){
     if(got.length){ fill.push("財務燈號 "+got.length+" 項");
       lampTxt='<br><b>燈號推算</b>（同類校 '+Math.max.apply(null,lp.peers)+
         ' 校百分位排序）：'+got.join("；")+
-        '。官方燈號表僅更新至 109 學年度，此三項係依官方公式以平台原始財務表重算。'+
-        '其餘四項需流動負債，平台未揭露私校資產負債表，請自行填寫。'; }
+        '。官方燈號表僅更新至 109 學年度，上列各項係依官方公式以平台原始財務表重算，'+
+        '並以 107 至 109 學年度官方公告值回頭驗算。'+
+        '其餘現金流量比率與速動比率的分母均為流動負債，平台未揭露私校資產負債表，請自行填寫。'; }
   }
 
   var ref=[], L=last(d.fund), O=last(d.opex), N=d.net, DBT=last(d.debt);
@@ -1235,7 +1239,8 @@ function run(){
   var lampTxt=[]; LAMPS.forEach(function(x){ if(L[x[0]]!=="") lampTxt.push(x[1]+"："+LNAME[L[x[0]]]); });
   var OPT=[
    ["財務比率燈號", filled>0?(filled+" / 7 項已填，紅燈 "+red+" 項"):"－", filled>0,
-     srcOf(["l1","l3","l7"],"平台 財2-11")+(isAuto("l1")||isAuto("l3")||isAuto("l7")?
+     srcOf(["l1","l2","l3","l6","l7"],"平台 財2-1、2-6、2-7、2-8")+
+       (isAuto("l1")||isAuto("l2")||isAuto("l3")||isAuto("l6")||isAuto("l7")?
        '<br><span class="sm">依原始財務表重算</span>':"")],
    ["新生註冊率（%）", f3(V("r1"),V("r2"),V("r3"),true), V("r3")!==null, srcOf(["r1","r2","r3"],"平台 學12-3")],
    ["在學學生數（人）", f3(V("s1"),V("s2"),V("s3"),false), V("s3")!==null, srcOf(["s1","s2","s3"],"平台 學1-2")],

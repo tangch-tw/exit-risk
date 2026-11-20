@@ -730,7 +730,8 @@ function lookup(name){
   if(!hit) DB.rows.forEach(function(r){ if(!hit&&nkey(r[0]).indexOf(k)>=0&&k.length>=3) hit=r; });
   if(!hit) return null;
   return {name:hit[0],type:hit[1],stu:hit[2],reg:hit[3],fund:hit[4],debt:hit[5],net:hit[6],opex:hit[7],
-          lv:hit[8]||null, grant:GIDX[nkey(hit[0])]||null};
+          lv:hit[8]||null, tch:hit[9]||null, owe:hit[10]||null,
+          grant:GIDX[nkey(hit[0])]||null};
 }
 var LVMAP=["l1","l3","l7"];   // 學雜費收入變動率、本期餘絀比率、負債權益比率
 function calcLamps(d){
@@ -752,6 +753,13 @@ function calcLamps(d){
   }
   return any?{lamps:out, vals:vals, yrs:yrs, peers:ns}:null;
 }
+function oweInfo(d){
+  if(!DB||!d||!d.owe) return null;
+  var hits=[];
+  d.owe.forEach(function(v,k){ if(v&&v[0]===1)
+    hits.push(DB.ys[k]+" 學年度（起 "+(v[1]||"未載")+"，改善 "+(v[2]||"未完成")+"）"); });
+  return hits.length?hits:null;
+}
 function last(a){for(var i=a.length-1;i>=0;i--) if(a[i]!==null) return {v:a[i],i:i};return null;}
 
 function fillOfficial(){
@@ -763,10 +771,13 @@ function fillOfficial(){
     return; }
   var n=DB.ys.length, fill=[];
   setAuto("dataYear", DB.ys[n-1]);
-  ["s1","s2","s3"].forEach(function(id,k){ if(setAuto(id,d.stu[n-3+k])) ; });
+  ["s1","s2","s3"].forEach(function(id,k){ setAuto(id,d.stu[n-3+k]); });
   ["r1","r2","r3"].forEach(function(id,k){ setAuto(id,d.reg[n-3+k]); });
+  if(d.tch) ["t1","t2","t3"].forEach(function(id,k){ setAuto(id,d.tch[n-3+k]); });
+  else clearAuto(["t1","t2","t3"]);
   if(d.stu[n-1]!==null) fill.push("在學學生數");
   if(d.reg[n-1]!==null) fill.push("新生註冊率");
+  if(d.tch&&d.tch[n-1]!==null) fill.push("專任教師數");
   if(d.grant){
     var tot=[0,1,2].map(function(k){
       var a=d.grant.d?d.grant.d[k]:null, b=d.grant.g?d.grant.g[k]:null;
@@ -797,8 +808,14 @@ function fillOfficial(){
   if(DBT) ref.push("負債占總資產 "+DBT.v+"%（"+DB.yf[DBT.i]+" 學年度）");
   if(N) ref.push("本期餘絀 "+N.map(function(x,i){return x===null?"－":f0(x);}).join(" / ")+" 百萬元（"+DB.yf.join("/")+" 學年度）");
   if(L&&O&&O.v>0) ref.push("<b>可用資金約可支應 "+(L.v/(O.v/12)).toFixed(1)+" 個月經常支出</b>（推估，非法定值）");
+  var ow=oweInfo(d), owTxt="";
+  if(ow) owTxt='<br><b style="color:var(--red)">平台揭露該校曾積欠專任教師薪資：'+ow.join("、")+
+    '。</b>退場條例第 6 條第 1 項第 5 款之要件為「積欠教師薪資且經依教師待遇條例處以罰鍰」，'+
+    '平台未揭露是否罰鍰，故未自動勾選，請查證後自行認定。';
+  else if(d.owe&&d.owe.some(function(v){return v===0;}))
+    owTxt='<br>平台揭露該校於 '+DB.ys[0]+' 至 '+DB.ys[DB.ys.length-1]+' 學年度無積欠專任教師薪資情形。';
   msg("autoMsg","ok",'已帶入 <b>'+esc(d.name)+'</b> 的'+(fill.length?fill.join("、"):"（無可用欄位）")+
-    '。<br>平台參考資料：'+(ref.length?ref.join("；"):"無")+lampTxt+
+    '。<br>平台參考資料：'+(ref.length?ref.join("；"):"無")+lampTxt+owTxt+
     '<br>四項法定財務指標須自決算書取得，平台無對應資料，仍請手動填寫。');
 }
 
@@ -817,6 +834,8 @@ function fillQuick(){
     document.getElementById("q_regdn").checked=dn; }
   if(d.stu[n-1]!==null&&d.stu[n-3]!==null&&d.stu[n-3]!==0){
     setAuto("q_stu",Math.round((d.stu[n-1]-d.stu[n-3])/d.stu[n-3]*1000)/10); fill.push("學生數三年變動"); }
+  if(d.tch&&d.tch[n-1]!==null&&d.tch[n-3]!==null&&d.tch[n-3]!==0){
+    setAuto("q_fac",Math.round((d.tch[n-1]-d.tch[n-3])/d.tch[n-3]*1000)/10); fill.push("專任教師三年變動"); }
   var neg=d.net.filter(function(x){return x!==null&&x<0;}).length,
       known=d.net.filter(function(x){return x!==null;}).length;
   if(known===3){ setAuto("q_loss",String(neg)); fill.push("近三年短絀年數"); }
@@ -824,6 +843,8 @@ function fillQuick(){
   var L=last(d.fund),O=last(d.opex), hint="";
   if(L&&O&&O.v>0) hint='<br>平台推估：可用資金約可支應 <b>'+(L.v/(O.v/12)).toFixed(1)+
     '</b> 個月經常支出（'+DB.yf[L.i]+' 學年度決算，僅供參考，第一題請以學校實際掌握數字填答）。';
+  var qow=oweInfo(d);
+  if(qow) hint+='<br><b style="color:var(--red)">平台揭露該校曾積欠專任教師薪資：'+qow.join("、")+'。</b>';
   msg("qAutoMsg","ok",'已帶入 <b>'+esc(d.name)+'</b> 的'+(fill.length?fill.join("、"):"（無可用欄位）")+
     '。第一題現金月數與第三題借款發薪平台無資料，請自行填答。'+hint);
 }
@@ -889,7 +910,7 @@ function runQuick(){
    ["q_loan","近一學年度借款發薪",loan!==null,loan!==null?LOANTXT[loan]:"－","總務或會計單位"],
    ["q_reg","最近一學年新生註冊率",reg!==null,reg!==null?reg+"%"+(regdn?"（近三年逐年下降）":""):"－",srcOf("q_reg","平台學12-3或教務處")],
    ["q_stu","在學學生數三年變動",stu!==null,stu!==null?(stu>0?"+":"")+stu+"%":"－",srcOf("q_stu","平台學1-2或教務處")],
-   ["q_fac","專任教師數三年變動",fac!==null,fac!==null?(fac>0?"+":"")+fac+"%":"－","人事室或平台教師類"]
+   ["q_fac","專任教師數三年變動",fac!==null,fac!==null?(fac>0?"+":"")+fac+"%":"－",srcOf("q_fac","平台 教1-2或人事室")]
   ];
   mark(QREQ.map(function(x){return [x[0],!x[2]];}));
   var qMiss=QREQ.filter(function(x){return !x[2];});
@@ -1195,7 +1216,7 @@ function run(){
        '<br><span class="sm">依原始財務表重算</span>':"")],
    ["新生註冊率（%）", f3(V("r1"),V("r2"),V("r3"),true), V("r3")!==null, srcOf(["r1","r2","r3"],"平台 學12-3")],
    ["在學學生數（人）", f3(V("s1"),V("s2"),V("s3"),false), V("s3")!==null, srcOf(["s1","s2","s3"],"平台 學1-2")],
-   ["專任教師數（人）", f3(V("t1"),V("t2"),V("t3"),false), V("t3")!==null, "人事室（平台無此表）"],
+   ["專任教師數（人）", f3(V("t1"),V("t2"),V("t3"),false), V("t3")!==null, srcOf(["t1","t2","t3"],"平台 教1-2")],
    ["深耕與獎補助款（元）", f3(g1,g2,g3,false), g3!==null, srcOf(["g1","g2","g3"],"教育部年度核定清冊")]
   ];
   var doneOpt=OPT.filter(function(x){return x[2];}).length;

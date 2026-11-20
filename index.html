@@ -66,6 +66,13 @@ input.miss,select.miss{border-color:var(--red);background:#fff8f8}
 .prog{height:9px;background:#e9edf0;border-radius:5px;overflow:hidden;margin:8px 0 5px}
 .prog i{display:block;height:100%;border-radius:5px;background:var(--green)}
 .prog i.part{background:var(--accent)} .prog i.bad{background:var(--red)}
+input.auto{border-left:4px solid var(--green);background:#f6fbf8}
+.autotag{display:inline-block;background:var(--green-soft);color:var(--green);border-radius:4px;
+  padding:0 5px;font-size:10.5px;font-weight:700;margin-left:5px;vertical-align:1px}
+.loadbox{border-left:4px solid var(--blue);background:var(--blue-soft);padding:10px 13px;
+  border-radius:0 7px 7px 0;font-size:12.5px;margin:9px 0;line-height:1.65}
+.loadbox.ok{border-color:var(--green);background:var(--green-soft)}
+.loadbox.bad{border-color:var(--red);background:var(--red-soft)}
 .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
 .chk{display:flex;align-items:flex-start;gap:8px;margin:7px 0;font-size:13px;line-height:1.55;color:var(--ink2)}
 .chk input{margin-top:4px;flex:none;width:15px;height:15px;accent-color:var(--accent)}
@@ -244,10 +251,13 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
       <button class="btn sec" onclick="qpreset('c')">清空</button>
 
       <h3>受評對象</h3>
-      <label>受評學校名稱<span class="req">必填</span></label>
-      <input type="text" id="q_school" placeholder="例如：本校">
+      <label>受評學校名稱<span class="req">必填</span>
+        <span class="q">輸入或下拉選取，可自動帶入平台資料</span></label>
+      <input type="text" id="q_school" list="dlSchoolQ" autocomplete="off" placeholder="輸入校名關鍵字即可篩選">
+      <datalist id="dlSchoolQ"></datalist>
+      <div id="qAutoMsg" class="loadbox">資料庫載入中…</div>
       <label>資料時點<span class="req">必填</span><span class="q">所依據資料之學年度</span></label>
-      <input type="text" id="q_year" placeholder="例如：113">
+      <input type="text" id="q_year" placeholder="例如：114">
 
       <h3>一、現金撐得了幾個月<span class="req">必填</span></h3>
       <label>目前可動用資金，約可支應幾個月的人事費與經常性支出？
@@ -331,11 +341,14 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
       <button class="btn sec" onclick="preset('clear')">清空</button>
 
       <h3>受評對象</h3>
-      <label>受評學校名稱<span class="req">必填</span></label>
-      <input type="text" id="schoolName" placeholder="例如：OO科技大學">
+      <label>受評學校名稱<span class="req">必填</span>
+        <span class="q">輸入或下拉選取，可自動帶入平台資料</span></label>
+      <input type="text" id="schoolName" list="dlSchool" autocomplete="off" placeholder="輸入校名關鍵字即可篩選">
+      <datalist id="dlSchool"></datalist>
+      <div id="autoMsg" class="loadbox">資料庫載入中…</div>
       <label>資料時點<span class="req">必填</span>
         <span class="q">決算書與平台資料所屬學年度</span></label>
-      <input type="text" id="dataYear" placeholder="例如：113">
+      <input type="text" id="dataYear" placeholder="例如：114">
 
       <h3>一、財務法定指標</h3>
       <p class="hint">本區四項為法定判定的必要資料，取自學校決算書。缺任一項，判定結果即為暫定。</p>
@@ -640,6 +653,11 @@ var TABS=[["calc","風險試算"],["law","法令依據"],["data","資料來源�
   });
 })();
 
+["schoolName"].forEach(function(id){var e=document.getElementById(id);
+  if(e){e.addEventListener("change",fillOfficial);e.addEventListener("blur",fillOfficial);}});
+["q_school"].forEach(function(id){var e=document.getElementById(id);
+  if(e){e.addEventListener("change",fillQuick);e.addEventListener("blur",fillQuick);}});
+
 function go(v){
   document.querySelectorAll(".view").forEach(function(x){x.classList.remove("on")});
   document.getElementById("v-"+v).classList.add("on");
@@ -664,6 +682,110 @@ function go(v){
   window.scrollTo(0,0);
 }
 
+/* ================= 平台資料自動帶入 ================= */
+var DB=null, GR=null, GIDX={}, AUTO={o:null,q:null};
+function nkey(n){return String(n).replace(/學校財團法人.*?(?=大學|學院|專科|科技)/,"")
+  .replace(/臺/g,"台").replace(/\s/g,"").trim();}
+function msg(id,cls,html){var e=document.getElementById(id);
+  if(e){e.className="loadbox"+(cls?" "+cls:"");e.innerHTML=html;}}
+function setAuto(id,v){var e=document.getElementById(id);if(!e)return false;
+  if(v===null||v===undefined){e.classList.remove("auto");return false;}
+  e.value=v;e.classList.add("auto");e.classList.remove("miss");return true;}
+function clearAuto(ids){ids.forEach(function(i){var e=document.getElementById(i);
+  if(e)e.classList.remove("auto");});}
+
+(async function loadDB(){
+  try{
+    var res=await Promise.all([fetch("schools.json"),fetch("grants.json")]);
+    if(!res[0].ok) throw new Error("schools.json HTTP "+res[0].status);
+    DB=await res[0].json();
+    GR=res[1].ok?await res[1].json():null;
+    if(GR&&GR.rows) Object.keys(GR.rows).forEach(function(k){GIDX[nkey(k)]=GR.rows[k];});
+    var names=DB.rows.map(function(r){return r[0];}).sort();
+    ["dlSchool","dlSchoolQ"].forEach(function(id){
+      var dl=document.getElementById(id); if(!dl)return;
+      dl.innerHTML=names.map(function(n){return '<option value="'+esc(n)+'">';}).join("");
+    });
+    var t='已載入 <b>'+names.length+'</b> 所私立大專校院。資料來源：'+esc(DB.src)+
+          '，學生數與註冊率至 <b>'+DB.ys[DB.ys.length-1]+'</b> 學年度，財務至 <b>'+
+          DB.yf[DB.yf.length-1]+'</b> 學年度'+
+          (GR?('；深耕與獎補助款至 <b>'+GR.ys[GR.ys.length-1]+'</b> 年度'):'')+
+          '。<b>選取校名後將自動帶入</b>，帶入欄位以綠色標示，可手動修改。';
+    msg("autoMsg","ok",t); msg("qAutoMsg","ok",t);
+  }catch(e){
+    var t='無法載入資料庫（'+esc(e.message)+'），所有欄位請手動輸入。若以本機開啟單一檔案，瀏覽器會擋下同目錄讀取，請改用線上版。';
+    msg("autoMsg","bad",t); msg("qAutoMsg","bad",t);
+  }
+})();
+
+function lookup(name){
+  if(!DB||!name) return null;
+  var k=nkey(name), hit=null;
+  DB.rows.forEach(function(r){ if(nkey(r[0])===k) hit=r; });
+  if(!hit) DB.rows.forEach(function(r){ if(!hit&&nkey(r[0]).indexOf(k)>=0&&k.length>=3) hit=r; });
+  if(!hit) return null;
+  return {name:hit[0],type:hit[1],stu:hit[2],reg:hit[3],fund:hit[4],debt:hit[5],net:hit[6],opex:hit[7],
+          grant:GIDX[nkey(hit[0])]||null};
+}
+function last(a){for(var i=a.length-1;i>=0;i--) if(a[i]!==null) return {v:a[i],i:i};return null;}
+
+function fillOfficial(){
+  var nm=TX("schoolName"), d=lookup(nm);
+  AUTO.o=d;
+  var ids=["dataYear","s1","s2","s3","r1","r2","r3","g1","g2","g3"];
+  if(!d){ clearAuto(ids);
+    if(nm) msg("autoMsg","", '找不到「'+esc(nm)+'」，請由下拉清單選取，或自行輸入各欄位。');
+    return; }
+  var n=DB.ys.length, fill=[];
+  setAuto("dataYear", DB.ys[n-1]);
+  ["s1","s2","s3"].forEach(function(id,k){ if(setAuto(id,d.stu[n-3+k])) ; });
+  ["r1","r2","r3"].forEach(function(id,k){ setAuto(id,d.reg[n-3+k]); });
+  if(d.stu[n-1]!==null) fill.push("在學學生數");
+  if(d.reg[n-1]!==null) fill.push("新生註冊率");
+  if(d.grant){
+    var tot=[0,1,2].map(function(k){
+      var a=d.grant.d?d.grant.d[k]:null, b=d.grant.g?d.grant.g[k]:null;
+      return (a===null&&b===null)?null:Math.round(((a||0)+(b||0))*1000);});
+    ["g1","g2","g3"].forEach(function(id,k){ setAuto(id,tot[k]); });
+    if(tot[2]!==null) fill.push("深耕與獎補助款");
+  } else { clearAuto(["g1","g2","g3"]); }
+
+  var ref=[], L=last(d.fund), O=last(d.opex), N=d.net, DBT=last(d.debt);
+  if(L) ref.push("可用資金 "+f0(L.v)+" 百萬元（"+DB.yf[L.i]+" 學年度）");
+  if(DBT) ref.push("負債占總資產 "+DBT.v+"%（"+DB.yf[DBT.i]+" 學年度）");
+  if(N) ref.push("本期餘絀 "+N.map(function(x,i){return x===null?"－":f0(x);}).join(" / ")+" 百萬元（"+DB.yf.join("/")+" 學年度）");
+  if(L&&O&&O.v>0) ref.push("<b>可用資金約可支應 "+(L.v/(O.v/12)).toFixed(1)+" 個月經常支出</b>（推估，非法定值）");
+  msg("autoMsg","ok",'已帶入 <b>'+esc(d.name)+'</b> 的'+(fill.length?fill.join("、"):"（無可用欄位）")+
+    '。<br>平台參考資料：'+(ref.length?ref.join("；"):"無")+
+    '<br>四項法定財務指標須自決算書取得，平台無對應資料，仍請手動填寫。');
+}
+
+function fillQuick(){
+  var nm=TX("q_school"), d=lookup(nm);
+  AUTO.q=d;
+  var ids=["q_year","q_reg","q_stu","q_loss"];
+  if(!d){ clearAuto(ids);
+    if(nm) msg("qAutoMsg","", '找不到「'+esc(nm)+'」，請由下拉清單選取，或自行作答。');
+    return; }
+  var n=DB.ys.length, fill=[];
+  setAuto("q_year", DB.ys[n-1]);
+  if(d.reg[n-1]!==null){ setAuto("q_reg",d.reg[n-1]); fill.push("新生註冊率");
+    var dn=(d.reg[n-1]!==null&&d.reg[n-2]!==null&&d.reg[n-3]!==null&&
+            d.reg[n-2]<d.reg[n-3]&&d.reg[n-1]<d.reg[n-2]);
+    document.getElementById("q_regdn").checked=dn; }
+  if(d.stu[n-1]!==null&&d.stu[n-3]!==null&&d.stu[n-3]!==0){
+    setAuto("q_stu",Math.round((d.stu[n-1]-d.stu[n-3])/d.stu[n-3]*1000)/10); fill.push("學生數三年變動"); }
+  var neg=d.net.filter(function(x){return x!==null&&x<0;}).length,
+      known=d.net.filter(function(x){return x!==null;}).length;
+  if(known===3){ setAuto("q_loss",String(neg)); fill.push("近三年短絀年數"); }
+
+  var L=last(d.fund),O=last(d.opex), hint="";
+  if(L&&O&&O.v>0) hint='<br>平台推估：可用資金約可支應 <b>'+(L.v/(O.v/12)).toFixed(1)+
+    '</b> 個月經常支出（'+DB.yf[L.i]+' 學年度決算，僅供參考，第一題請以學校實際掌握數字填答）。';
+  msg("qAutoMsg","ok",'已帶入 <b>'+esc(d.name)+'</b> 的'+(fill.length?fill.join("、"):"（無可用欄位）")+
+    '。第一題現金月數與第三題借款發薪平台無資料，請自行填答。'+hint);
+}
+
 function TX(id){var e=document.getElementById(id);if(!e)return null;var v=e.value.trim();return v===""?null:v;}
 function esc(x){return String(x).replace(/[&<>"']/g,function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
@@ -683,6 +805,9 @@ function bar(done,total){
   return '<div class="prog"><i class="'+cls+'" style="width:'+r+'%"></i></div>'+
          '<p class="sm">已填 <b>'+done+'</b> 項，共 '+total+' 項（'+r+'%）</p>';}
 function st(ok){return ok?'<span class="tag t-ok">已填</span>':'<span class="tag t-hit">欠缺</span>';}
+function isAuto(id){var e=document.getElementById(id);return !!(e&&e.classList.contains("auto"));}
+function srcOf(ids,base){var any=(typeof ids==="string"?[ids]:ids).some(isAuto);
+  return any?'<b style="color:var(--green)">平台自動帶入</b>':base;}
 function V(id){var e=document.getElementById(id);var v=e.value.trim();return v===""?null:parseFloat(v);}
 function S(id){var v=document.getElementById(id).value;return v===""?null:parseInt(v,10);}
 function C(id){return document.getElementById(id).checked;}
@@ -694,10 +819,9 @@ function f1(n){return n===null?"－":n.toFixed(1);}
 
 /* ================= 簡化版 ================= */
 function qpreset(k){
-  ["q_school","q_year","q_cash","q_reg","q_stu","q_fac"].forEach(function(i){
-    setv(i,null);var e=document.getElementById(i);if(e)e.classList.remove("miss");});
-  ["q_loss","q_loan"].forEach(function(i){setv(i,null);
-    var e=document.getElementById(i);if(e)e.classList.remove("miss");});
+  ["q_school","q_year","q_cash","q_reg","q_stu","q_fac","q_loss","q_loan"].forEach(function(i){
+    setv(i,null);var e=document.getElementById(i);
+    if(e){e.classList.remove("miss");e.classList.remove("auto");}});
   setc("q_regdn",false);
   if(k==="c"){document.getElementById("qout").innerHTML=
     '<div class="card"><h2>檢視結果</h2><p class="hint">已清空。請重新作答後按「執行檢視」。</p></div>';return;}
@@ -717,12 +841,12 @@ function runQuick(){
   var LOANTXT={0:"未曾發生",1:"發生 1 至 2 次",2:"發生 3 次以上"};
   var QREQ=[
    ["q_school","受評學校名稱",school!==null,school?esc(school):"－","使用者填寫"],
-   ["q_year","資料時點",year!==null,year?esc(year)+" 學年度":"－","使用者填寫"],
+   ["q_year","資料時點",year!==null,year?esc(year)+" 學年度":"－",srcOf("q_year","使用者填寫")],
    ["q_cash","現金可支應月數",cash!==null,cash!==null?cash+" 個月":"－","會計室或主計單位"],
-   ["q_loss","近三學年度短絀年數",loss!==null,loss!==null?LOSSTXT[loss]:"－","決算書或平台財2-10"],
+   ["q_loss","近三學年度短絀年數",loss!==null,loss!==null?LOSSTXT[loss]:"－",srcOf("q_loss","決算書或平台財2-10")],
    ["q_loan","近一學年度借款發薪",loan!==null,loan!==null?LOANTXT[loan]:"－","總務或會計單位"],
-   ["q_reg","最近一學年新生註冊率",reg!==null,reg!==null?reg+"%"+(regdn?"（近三年逐年下降）":""):"－","平台學12-1或教務處"],
-   ["q_stu","在學學生數三年變動",stu!==null,stu!==null?(stu>0?"+":"")+stu+"%":"－","平台學生類或教務處"],
+   ["q_reg","最近一學年新生註冊率",reg!==null,reg!==null?reg+"%"+(regdn?"（近三年逐年下降）":""):"－",srcOf("q_reg","平台學12-3或教務處")],
+   ["q_stu","在學學生數三年變動",stu!==null,stu!==null?(stu>0?"+":"")+stu+"%":"－",srcOf("q_stu","平台學1-2或教務處")],
    ["q_fac","專任教師數三年變動",fac!==null,fac!==null?(fac>0?"+":"")+fac+"%":"－","人事室或平台教師類"]
   ];
   mark(QREQ.map(function(x){return [x[0],!x[2]];}));
@@ -830,7 +954,8 @@ function runQuick(){
 function preset(k){
   var ids=["schoolName","dataYear","m_cash","m_fin","m_def","m_loan","r1","r2","r3","s1","s2","s3","t1","t2","t3","g1","g2","g3"];
   var cs=["c_debt","c_fac1","c_fac2","c_qa1","c_qa2","c_pay","c_twice","c_viol","c_confirm"];
-  ids.forEach(function(i){setv(i,null);var e=document.getElementById(i);if(e)e.classList.remove("miss");});
+  ids.forEach(function(i){setv(i,null);var e=document.getElementById(i);
+    if(e){e.classList.remove("miss");e.classList.remove("auto");}});
   cs.forEach(function(i){setc(i,false);var e=document.getElementById(i);if(e)e.classList.remove("miss");});
   LAMPS.forEach(function(L){document.getElementById(L[0]).value=""});
   if(k==="clear"){document.getElementById("out").innerHTML=
@@ -873,7 +998,7 @@ function run(){
 
   var REQ=[
    ["schoolName","受評學校名稱",school!==null,school?esc(school):"－","使用者填寫"],
-   ["dataYear","資料時點",year!==null,year?esc(year)+" 學年度":"－","使用者填寫"],
+   ["dataYear","資料時點",year!==null,year?esc(year)+" 學年度":"－",srcOf("dataYear","使用者填寫")],
    ["m_cash","可用資金不足月數（近二年累計）",cash!==null,cash!==null?cash+" 個月":"－","學校決算書"],
    ["m_fin","融資管制額為負次數（近三學年度）",fin!==null,fin!==null?fin+" 次":"－","學校決算書"],
    ["m_def","扣減不動產支出前現金餘絀短絀次數",def!==null,def!==null?def+" 次":"－","學校決算書"],
@@ -1024,10 +1149,10 @@ function run(){
   var lampTxt=[]; LAMPS.forEach(function(x){ if(L[x[0]]!=="") lampTxt.push(x[1]+"："+LNAME[L[x[0]]]); });
   var OPT=[
    ["財務比率燈號", filled>0?(filled+" / 7 項已填，紅燈 "+red+" 項"):"－", filled>0, "平台 財2-11"],
-   ["新生註冊率（%）", f3(V("r1"),V("r2"),V("r3"),true), V("r3")!==null, "平台 學12-1"],
-   ["在學學生數（人）", f3(V("s1"),V("s2"),V("s3"),false), V("s3")!==null, "平台 學生類表冊"],
-   ["專任教師數（人）", f3(V("t1"),V("t2"),V("t3"),false), V("t3")!==null, "平台 教師類表冊"],
-   ["深耕與獎補助款（元）", f3(g1,g2,g3,false), g3!==null, "教育部年度核定清冊"]
+   ["新生註冊率（%）", f3(V("r1"),V("r2"),V("r3"),true), V("r3")!==null, srcOf(["r1","r2","r3"],"平台 學12-3")],
+   ["在學學生數（人）", f3(V("s1"),V("s2"),V("s3"),false), V("s3")!==null, srcOf(["s1","s2","s3"],"平台 學1-2")],
+   ["專任教師數（人）", f3(V("t1"),V("t2"),V("t3"),false), V("t3")!==null, "人事室（平台無此表）"],
+   ["深耕與獎補助款（元）", f3(g1,g2,g3,false), g3!==null, srcOf(["g1","g2","g3"],"教育部年度核定清冊")]
   ];
   var doneOpt=OPT.filter(function(x){return x[2];}).length;
 

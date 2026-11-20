@@ -382,7 +382,7 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
         <b>已逐項查證上列八項要件</b>（未勾選者視為未查證，結果將標示為待確認）<span class="req">必填</span></label></div>
 
       <h3>三、財務比率燈號<span class="opt">建議</span></h3>
-      <p class="hint">官方「財2-11 財務比率及燈號」僅更新至 109 學年度。本工具就其中<b>三項</b>（學雜費收入變動率、本期餘絀比率、負債權益比率）依官方公式，以平台原始財務表重算 110 至 113 學年度並自動帶入，欄位以綠色標示。<b>其餘四項</b>的分母均需流動負債，平台未揭露私校資產負債表，無法重算，請自行填寫。燈號為同類校相對位置，紅燈為倒數 20%。未填不影響法定要件判定，但 R2 級別將無法成立。</p>
+      <p class="hint">官方「財2-11 財務比率及燈號」僅更新至 109 學年度。本工具就其中<b>三項</b>（學雜費收入變動率、本期餘絀比率、負債權益比率）依官方公式，以平台原始財務表重算 110 至 113 學年度並自動帶入，欄位以綠色標示。<b>其餘四項</b>的分母均需流動負債，平台未揭露私校資產負債表，無法重算，請自行填寫。燈號為同類校相對位置，紅燈為倒數 20%。未填不影響法定要件判定；R2 級別改以<b>已填項目</b>的紅燈比例計算，故僅填三項亦可判定，惟填愈少代表性愈低。</p>
       <div id="lamps"></div>
 
       <h3>四、招生與師資動能<span class="opt">建議</span></h3>
@@ -432,7 +432,7 @@ footer{text-align:center;padding:22px 18px 34px;color:var(--ink3);font-size:12px
         <tr><th style="width:56px">級別</th><th style="width:134px">名稱</th><th>成立條件</th></tr>
         <tr><td style="text-align:center"><b>R0</b></td><td>法定要件已成立</td><td>符合退場條例第 6 條第 1 項任一款</td></tr>
         <tr><td style="text-align:center"><b>R1</b></td><td>法定預警區</td><td>符合退場條例第 5 條第 1 項任一款</td></tr>
-        <tr><td style="text-align:center"><b>R2</b></td><td>財務燈號警示</td><td>七項燈號紅燈達 3 項，或償債能力三項中紅燈達 2 項</td></tr>
+        <tr><td style="text-align:center"><b>R2</b></td><td>財務燈號警示</td><td>依<b>已填項目</b>的紅燈比例判定：七項整體紅燈占比達 43%（相當於 3/7），或償債能力紅燈占比達 67%（相當於 2/3）。已填不足 3 項時不啟用</td></tr>
         <tr><td style="text-align:center"><b>R3</b></td><td>招生或師資動能衰退</td><td>觸發註冊率、學生數或專任教師數之動能警示條件</td></tr>
         <tr><td style="text-align:center"><b>R4</b></td><td>目前無明顯警訊</td><td>就已填欄位未觸及上述任一情形</td></tr>
       </table>
@@ -1111,13 +1111,24 @@ function run(){
   if(tDrop!==null&&tDrop<=-20) mom.push("專任教師數三年衰退 "+Math.abs(tDrop).toFixed(1)+"%");
   if(tDrop1!==null&&tDrop1<=-20) mom.push("專任教師數最近一年流失 "+Math.abs(tDrop1).toFixed(1)+"%");
 
+  // R2：以已填項目的紅燈比例判定（門檻沿用原先 3/7 與 2/3）
+  var TH_ALL=3/7, TH_SOLV=2/3;
+  var redRatio=filled>0?red/filled:0, solvRatio=filledSolv>0?redSolv/filledSolv:0;
+  var hitAll=(filled>=3&&redRatio>=TH_ALL), hitSolv=(filledSolv>=2&&solvRatio>=TH_SOLV);
+  var r2hit=hitAll||hitSolv, r2why=[];
+  if(hitAll) r2why.push("七項整體紅燈 "+red+" / 已填 "+filled+" 項，占 "+(redRatio*100).toFixed(0)+"%，達 43% 門檻");
+  if(hitSolv) r2why.push("償債能力紅燈 "+redSolv+" / 已填 "+filledSolv+" 項，占 "+(solvRatio*100).toFixed(0)+"%，達 67% 門檻");
+  r2why=r2why.join("；");
+
   var lv,nm,ds;
   if(t6.length>0){lv="R0";nm="法定要件已成立";
     ds="已符合退場條例第 6 條第 1 項所定情形。依該條規定，經學校主管機關提審議會審議認定者，應公告列為專案輔導學校；依第 13 條，專案輔導學校應於公告之日起二年內改善，屆期未獲免除者應令其於下一學年度停止全部招生。";}
   else if(t5.length>0){lv="R1";nm="法定預警區";
     ds="已符合退場條例第 5 條第 1 項所定預警情形。主管機關得進行財務查核、提供諮詢輔導或維護學生受教權益檢核。依第 6 條第 1 項第 6 款，三年內被列為預警學校達二次以上者，即構成專案輔導要件。";}
-  else if(red>=3||redSolv>=2){lv="R2";nm="財務燈號警示";
-    ds="尚未觸及法定要件，惟財務比率燈號已集中於相對最差區間。燈號為同類校相對位置，單點不宜過度解讀，但多項同時亮紅且持續者，通常反映營運現金產生能力不足。";}
+  else if(r2hit){lv="R2";nm="財務燈號警示";
+    ds="尚未觸及法定要件，惟財務比率燈號已集中於相對最差區間。本級別依<b>已填項目的紅燈比例</b>判定："+
+       r2why+"。燈號為同類校相對位置，單點不宜過度解讀，但多項同時亮紅且持續者，通常反映營運現金產生能力不足。"+
+       (filled<7?"　已填 "+filled+" / 7 項，未填項目不列入比例計算，實際紅燈比例可能高於此值。":"");}
   else if(mom.length>0){lv="R3";nm="招生或師資動能衰退";
     ds="財務面尚未出現法定警訊，惟招生或師資面已有衰退跡象。此類指標領先財務指標出現，宜持續追蹤。";}
   else {lv="R4";nm="目前無明顯警訊";
@@ -1183,9 +1194,13 @@ function run(){
       h+='<tr><td><span class="pill">'+x[2]+'</span></td><td>'+x[1]+'</td><td>'+
          (v===""?'<span class="tag t-na">未填</span>':'<span class="lamp L'+v+'"></span>'+LNAME[v])+'</td></tr>';});
     h+='</table>';
-    h+='<p class="sm">已填 '+filled+' 項，其中紅燈 <b>'+red+'</b> 項';
-    if(filledSolv>0) h+='；償債能力三項中紅燈 <b>'+redSolv+'</b> 項';
-    h+='。紅燈代表該指標落在同類校倒數 20%。</p>';
+    h+='<p class="sm">已填 '+filled+' / 7 項，其中紅燈 <b>'+red+'</b> 項，占已填項目 <b>'+
+       (redRatio*100).toFixed(0)+'%</b>（R2 門檻 43%）';
+    if(filledSolv>0) h+='；償債能力已填 '+filledSolv+' 項，紅燈 <b>'+redSolv+'</b> 項，占 <b>'+
+       (solvRatio*100).toFixed(0)+'%</b>（R2 門檻 67%）';
+    h+='。紅燈代表該指標落在同類校倒數 20%。';
+    if(filled>0&&filled<3) h+=' 已填項目不足 3 項，比例判定不啟用。';
+    h+='</p>';
   }
   h+='</div>';
 

@@ -787,7 +787,7 @@ function fillOfficial(){
   if(d.grant){
     var tot=[0,1,2].map(function(k){
       var a=d.grant.d?d.grant.d[k]:null, b=d.grant.g?d.grant.g[k]:null;
-      return (a===null&&b===null)?null:Math.round(((a||0)+(b||0))*1000);});
+      return (a===null&&b===null)?null:Math.round(((a||0)+(b||0))*1000000);});  // 百萬元 → 元
     ["g1","g2","g3"].forEach(function(id,k){ setAuto(id,tot[k]); });
     if(tot[2]!==null) fill.push("深耕與獎補助款");
   } else { clearAuto(["g1","g2","g3"]); }

@@ -725,7 +725,28 @@ function lookup(name){
   if(!hit) DB.rows.forEach(function(r){ if(!hit&&nkey(r[0]).indexOf(k)>=0&&k.length>=3) hit=r; });
   if(!hit) return null;
   return {name:hit[0],type:hit[1],stu:hit[2],reg:hit[3],fund:hit[4],debt:hit[5],net:hit[6],opex:hit[7],
-          grant:GIDX[nkey(hit[0])]||null};
+          lv:hit[8]||null, grant:GIDX[nkey(hit[0])]||null};
+}
+var LVMAP=["l1","l3","l7"];   // 學雜費收入變動率、本期餘絀比率、負債權益比率
+function calcLamps(d){
+  if(!DB||!DB.lvDir||!d||!d.lv) return null;
+  var yi=DB.yf.length-1, vals=null;
+  while(yi>=0){ if(d.lv[yi]){vals=d.lv[yi];break;} yi--; }
+  if(!vals) return null;
+  var out=[null,null,null], ns=[0,0,0];
+  for(var k=0;k<3;k++){
+    var v=vals[k]; if(v===null||v===undefined) continue;
+    var peers=[];
+    DB.rows.forEach(function(r){ var L=r[8]&&r[8][yi];
+      if(r[1]===d.type&&L&&L[k]!==null&&L[k]!==undefined) peers.push(L[k]); });
+    if(peers.length<20) continue;
+    var dir=DB.lvDir[k], better=0;
+    peers.forEach(function(x){ if(dir===1?x>v:x<v) better++; });
+    var p=better/peers.length;
+    out[k]=p<0.2?1:(p<0.4?2:(p<0.6?3:(p<0.8?4:5)));
+    ns[k]=peers.length;
+  }
+  return {lamps:out, vals:vals, year:DB.yf[yi], peers:ns};
 }
 function last(a){for(var i=a.length-1;i>=0;i--) if(a[i]!==null) return {v:a[i],i:i};return null;}
 
@@ -750,13 +771,28 @@ function fillOfficial(){
     if(tot[2]!==null) fill.push("深耕與獎補助款");
   } else { clearAuto(["g1","g2","g3"]); }
 
+  var lp=calcLamps(d), lampTxt="";
+  LVMAP.forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove("auto");});
+  if(lp){
+    var nmz=DB.lvCols||["學雜費收入變動率","本期餘絀比率","負債權益比率"], got=[];
+    LVMAP.forEach(function(id,k){
+      if(lp.lamps[k]===null)return;
+      var e=document.getElementById(id); if(!e)return;
+      e.value=String(lp.lamps[k]); e.classList.add("auto");
+      got.push(nmz[k]+" "+lp.vals[k]+"% → "+LNAME[String(lp.lamps[k])]);
+    });
+    if(got.length){ fill.push("財務燈號 "+got.length+" 項");
+      lampTxt='<br>燈號推算（'+lp.year+' 學年度，同類校 '+Math.max.apply(null,lp.peers)+' 校排序）：'+
+        got.join("；")+'。其餘三項償債能力指標需流動負債，平台未揭露私校資產負債表，請自行填寫。'; }
+  }
+
   var ref=[], L=last(d.fund), O=last(d.opex), N=d.net, DBT=last(d.debt);
   if(L) ref.push("可用資金 "+f0(L.v)+" 百萬元（"+DB.yf[L.i]+" 學年度）");
   if(DBT) ref.push("負債占總資產 "+DBT.v+"%（"+DB.yf[DBT.i]+" 學年度）");
   if(N) ref.push("本期餘絀 "+N.map(function(x,i){return x===null?"－":f0(x);}).join(" / ")+" 百萬元（"+DB.yf.join("/")+" 學年度）");
   if(L&&O&&O.v>0) ref.push("<b>可用資金約可支應 "+(L.v/(O.v/12)).toFixed(1)+" 個月經常支出</b>（推估，非法定值）");
   msg("autoMsg","ok",'已帶入 <b>'+esc(d.name)+'</b> 的'+(fill.length?fill.join("、"):"（無可用欄位）")+
-    '。<br>平台參考資料：'+(ref.length?ref.join("；"):"無")+
+    '。<br>平台參考資料：'+(ref.length?ref.join("；"):"無")+lampTxt+
     '<br>四項法定財務指標須自決算書取得，平台無對應資料，仍請手動填寫。');
 }
 
@@ -957,7 +993,7 @@ function preset(k){
   ids.forEach(function(i){setv(i,null);var e=document.getElementById(i);
     if(e){e.classList.remove("miss");e.classList.remove("auto");}});
   cs.forEach(function(i){setc(i,false);var e=document.getElementById(i);if(e)e.classList.remove("miss");});
-  LAMPS.forEach(function(L){document.getElementById(L[0]).value=""});
+  LAMPS.forEach(function(L){var e=document.getElementById(L[0]);e.value="";e.classList.remove("auto");});
   if(k==="clear"){document.getElementById("out").innerHTML=
     '<div class="card"><h2>評估結果</h2><p class="hint">已清空。請重新輸入資料後按「執行評估」。</p></div>';return;}
   if(k==="stable"){
@@ -1148,7 +1184,9 @@ function run(){
     return g(a)+" / "+g(b)+" / "+g(c);}
   var lampTxt=[]; LAMPS.forEach(function(x){ if(L[x[0]]!=="") lampTxt.push(x[1]+"："+LNAME[L[x[0]]]); });
   var OPT=[
-   ["財務比率燈號", filled>0?(filled+" / 7 項已填，紅燈 "+red+" 項"):"－", filled>0, "平台 財2-11"],
+   ["財務比率燈號", filled>0?(filled+" / 7 項已填，紅燈 "+red+" 項"):"－", filled>0,
+     srcOf(["l1","l3","l7"],"平台 財2-11")+(isAuto("l1")||isAuto("l3")||isAuto("l7")?
+       '<br><span class="sm">依原始財務表重算</span>':"")],
    ["新生註冊率（%）", f3(V("r1"),V("r2"),V("r3"),true), V("r3")!==null, srcOf(["r1","r2","r3"],"平台 學12-3")],
    ["在學學生數（人）", f3(V("s1"),V("s2"),V("s3"),false), V("s3")!==null, srcOf(["s1","s2","s3"],"平台 學1-2")],
    ["專任教師數（人）", f3(V("t1"),V("t2"),V("t3"),false), V("t3")!==null, "人事室（平台無此表）"],

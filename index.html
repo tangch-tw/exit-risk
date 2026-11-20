@@ -696,10 +696,15 @@ function clearAuto(ids){ids.forEach(function(i){var e=document.getElementById(i)
 
 (async function loadDB(){
   try{
-    var res=await Promise.all([fetch("schools.json"),fetch("grants.json")]);
-    if(!res[0].ok) throw new Error("schools.json HTTP "+res[0].status);
-    DB=await res[0].json();
-    GR=res[1].ok?await res[1].json():null;
+    if(window.__SCHOOLS){                 // 單檔內嵌版：資料已隨頁面附帶
+      DB=window.__SCHOOLS; GR=window.__GRANTS||null;
+    }else{                                 // 線上版：讀取同目錄資料檔
+      var res=await Promise.all([fetch("schools.json",{cache:"no-cache"}),
+                                 fetch("grants.json",{cache:"no-cache"})]);
+      if(!res[0].ok) throw new Error("schools.json HTTP "+res[0].status);
+      DB=await res[0].json();
+      GR=res[1].ok?await res[1].json():null;
+    }
     if(GR&&GR.rows) Object.keys(GR.rows).forEach(function(k){GIDX[nkey(k)]=GR.rows[k];});
     var names=DB.rows.map(function(r){return r[0];}).sort();
     ["dlSchool","dlSchoolQ"].forEach(function(id){
@@ -730,23 +735,22 @@ function lookup(name){
 var LVMAP=["l1","l3","l7"];   // 學雜費收入變動率、本期餘絀比率、負債權益比率
 function calcLamps(d){
   if(!DB||!DB.lvDir||!d||!d.lv) return null;
-  var yi=DB.yf.length-1, vals=null;
-  while(yi>=0){ if(d.lv[yi]){vals=d.lv[yi];break;} yi--; }
-  if(!vals) return null;
-  var out=[null,null,null], ns=[0,0,0];
+  var out=[null,null,null], vals=[null,null,null], yrs=[null,null,null], ns=[0,0,0], any=false;
   for(var k=0;k<3;k++){
-    var v=vals[k]; if(v===null||v===undefined) continue;
-    var peers=[];
-    DB.rows.forEach(function(r){ var L=r[8]&&r[8][yi];
-      if(r[1]===d.type&&L&&L[k]!==null&&L[k]!==undefined) peers.push(L[k]); });
-    if(peers.length<20) continue;
-    var dir=DB.lvDir[k], better=0;
-    peers.forEach(function(x){ if(dir===1?x>v:x<v) better++; });
-    var p=better/peers.length;
-    out[k]=p<0.2?1:(p<0.4?2:(p<0.6?3:(p<0.8?4:5)));
-    ns[k]=peers.length;
+    for(var yi=DB.yf.length-1; yi>=0; yi--){           // 各指標各自回溯
+      var L=d.lv[yi]; if(!L||L[k]===null||L[k]===undefined) continue;
+      var v=L[k], peers=[];
+      DB.rows.forEach(function(r){ var P=r[8]&&r[8][yi];
+        if(r[1]===d.type&&P&&P[k]!==null&&P[k]!==undefined) peers.push(P[k]); });
+      if(peers.length<20) continue;
+      var dir=DB.lvDir[k], better=0;
+      peers.forEach(function(x){ if(dir===1?x>v:x<v) better++; });
+      var p=better/peers.length;
+      out[k]=p<0.2?1:(p<0.4?2:(p<0.6?3:(p<0.8?4:5)));
+      vals[k]=v; yrs[k]=DB.yf[yi]; ns[k]=peers.length; any=true; break;
+    }
   }
-  return {lamps:out, vals:vals, year:DB.yf[yi], peers:ns};
+  return any?{lamps:out, vals:vals, yrs:yrs, peers:ns}:null;
 }
 function last(a){for(var i=a.length-1;i>=0;i--) if(a[i]!==null) return {v:a[i],i:i};return null;}
 
@@ -779,11 +783,13 @@ function fillOfficial(){
       if(lp.lamps[k]===null)return;
       var e=document.getElementById(id); if(!e)return;
       e.value=String(lp.lamps[k]); e.classList.add("auto");
-      got.push(nmz[k]+" "+lp.vals[k]+"% → "+LNAME[String(lp.lamps[k])]);
+      got.push(nmz[k]+" "+lp.vals[k]+"%（"+lp.yrs[k]+" 學年度）→ "+LNAME[String(lp.lamps[k])]);
     });
     if(got.length){ fill.push("財務燈號 "+got.length+" 項");
-      lampTxt='<br>燈號推算（'+lp.year+' 學年度，同類校 '+Math.max.apply(null,lp.peers)+' 校排序）：'+
-        got.join("；")+'。其餘三項償債能力指標需流動負債，平台未揭露私校資產負債表，請自行填寫。'; }
+      lampTxt='<br><b>燈號推算</b>（同類校 '+Math.max.apply(null,lp.peers)+
+        ' 校百分位排序）：'+got.join("；")+
+        '。官方燈號表僅更新至 109 學年度，此三項係依官方公式以平台原始財務表重算。'+
+        '其餘四項需流動負債，平台未揭露私校資產負債表，請自行填寫。'; }
   }
 
   var ref=[], L=last(d.fund), O=last(d.opex), N=d.net, DBT=last(d.debt);

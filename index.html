@@ -704,8 +704,9 @@ var AUTOIDS_Q=["q_year","q_reg","q_stu","q_loss","q_fac"];
     if(window.__SCHOOLS){                 // 單檔內嵌版：資料已隨頁面附帶
       DB=window.__SCHOOLS; GR=window.__GRANTS||null;
     }else{                                 // 線上版：讀取同目錄資料檔
-      var res=await Promise.all([fetch("schools.json",{cache:"no-cache"}),
-                                 fetch("grants.json",{cache:"no-cache"})]);
+      var cb="?t="+Math.floor(Date.now()/60000);   // 每分鐘更新一次，確保取到最新資料檔
+      var res=await Promise.all([fetch("schools.json"+cb,{cache:"reload"}),
+                                 fetch("grants.json"+cb,{cache:"reload"})]);
       if(!res[0].ok) throw new Error("schools.json HTTP "+res[0].status);
       DB=await res[0].json();
       GR=res[1].ok?await res[1].json():null;
